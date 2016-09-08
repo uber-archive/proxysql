@@ -1536,7 +1536,7 @@ __get_pkts_from_client:
 										// FIXME: we should check local_stmts to verify is this stmt_id was already sent
 										if (client_myds->myconn->local_stmts->exists(stmt_info->statement_id)) {
 											// the client is asking to prepare another identical prepared statements
-											stmt_info=NULL;
+											//stmt_info=NULL; // not sure if this logic is correct at all
 										}
 									}
 									if (stmt_info) {

@@ -72,10 +72,16 @@ MySQL_STMTs_local::~MySQL_STMTs_local() {
 		if (stmt) { // is a server
 			GloMyStmt->ref_count(stmt_id,-1,true, false);
 		} else { // is a client
-			GloMyStmt->ref_count(stmt_id,-1,true, true);
+			auto s2=ref_num.find(stmt_id);
+			if (s2!=ref_num.end()) {
+				GloMyStmt->ref_count(stmt_id,-s2->second,true, true);
+			} else {
+				assert(0);
+			}
 		}
 	}
 	m.erase(m.begin(),m.end());
+	ref_num.erase(ref_num.begin(),ref_num.end());
 }
 
 bool MySQL_STMTs_local::erase(uint32_t global_statement_id, bool client) {
@@ -83,8 +89,18 @@ bool MySQL_STMTs_local::erase(uint32_t global_statement_id, bool client) {
 	if (s!=m.end()) { // found
 		if (client) {
 			// we are removing it from a client, not backend
-			GloMyStmt->ref_count(global_statement_id,-1,true, true);
-			m.erase(s);
+			auto s2=ref_num.find(global_statement_id);
+			if (s2!=ref_num.end()) {
+				//GloMyStmt->ref_count(global_statement_id,-s2->second,true, true);
+				GloMyStmt->ref_count(global_statement_id,-1,true, true);
+			} else {
+				assert(0);
+			}
+			s2->second--;
+			if (s2->second==0) {
+				ref_num.erase(s2);
+				m.erase(s);
+			}
 			return true;
 		}
 		if (num_entries>1000) {
@@ -106,6 +122,13 @@ void MySQL_STMTs_local::insert(uint32_t global_statement_id, MYSQL_STMT *stmt) {
 	}
 	if (stmt==NULL) { // only for clients
 		GloMyStmt->ref_count(global_statement_id,1,true, true);
+		auto s2=ref_num.find(global_statement_id);
+		if (s2!=ref_num.end()) {
+			s2->second+=1;
+			//fprintf(stderr,"%d\n",s2->second);
+		} else {
+			ref_num.insert(std::make_pair(global_statement_id,1));
+		}
 	}
 }
 
@@ -130,7 +153,7 @@ void MySQL_STMT_Manager::active_prepared_statements(uint32_t *unique, uint32_t *
 	uint32_t u=0;
 	uint32_t t=0;
 	spin_wrlock(&rwlock);
-	fprintf(stderr,"%u , %u\n", find_prepared_statement_by_hash_calls, add_prepared_statement_calls);
+	//fprintf(stderr,"%u , %u\n", find_prepared_statement_by_hash_calls, add_prepared_statement_calls);
 	for (std::map<uint32_t, MySQL_STMT_Global_info *>::iterator it=m.begin(); it!=m.end(); ++it) {
 		MySQL_STMT_Global_info *a=it->second;
 		if (a->ref_count_client) {

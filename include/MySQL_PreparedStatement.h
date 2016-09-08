@@ -149,6 +149,7 @@ class MySQL_STMTs_local {
 	private:
 	unsigned int num_entries;
 	std::map<uint32_t, MYSQL_STMT *> m;
+	std::map<uint32_t, uint32_t> ref_num;
 	public:
 	MySQL_STMTs_local() {
 		num_entries=0;
