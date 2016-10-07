@@ -164,7 +164,7 @@ void MySQL_Monitor_Connection_Pool::purge_idle_connections() {
 	//fprintf(stderr,"tot conn in pool: %d\n",totconn);
 	for(it = my_connections.begin(); it != my_connections.end(); it++) {
 		std::list<MYSQL *> *lst=it->second;
-		if (!lst->empty()) {
+		if (lst && !lst->empty()) {
 			std::list<MYSQL *>::const_iterator it3;
 			for(it3 = lst->begin(); it3 != lst->end(); it3++) {
 				//it3=lst->begin();
